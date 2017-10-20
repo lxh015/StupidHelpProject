@@ -1,0 +1,522 @@
+﻿
+@{
+    ViewBag.Title = "Openlayer";
+}
+
+
+<link href="~/Content/ol.css" rel="stylesheet" />
+<script src="~/scripts/ol.js"></script>
+<div id="map" class="map" tabindex="0" style="width: 800px; height: 600px"></div>
+<label id="lblLatLng">经纬度</label>
+<button onclick="testAnimate()">test</button>
+<style>
+    .ol-popup {
+        position: absolute;
+        background-color: white;
+        filter: drop-shadow(0 1px 4px rgba(0,0,0,0.2));
+        padding: 15px;
+        border-radius: 10px;
+        border: 1px solid #cccccc;
+        bottom: 12px;
+        left: -50px;
+        min-width: 175px;
+    }
+
+
+        .ol-popup:after, .ol-popup:before {
+            top: 100%;
+            border: solid transparent;
+            content: " ";
+            height: 0;
+            width: 0;
+            position: absolute;
+            pointer-events: none;
+        }
+
+        .ol-popup:after {
+            border-top-color: white;
+            border-width: 10px;
+            left: 48px;
+            margin-left: -10px;
+        }
+
+        .ol-popup:before {
+            border-top-color: #cccccc;
+            border-width: 11px;
+            left: 48px;
+            margin-left: -11px;
+        }
+
+    .ol-popup-closer {
+        text-decoration: none;
+        position: absolute;
+        top: 2px;
+        right: 8px;
+    }
+
+        .ol-popup-closer:after {
+            content: "✖";
+        }
+</style>
+<div id="popup" class="ol-popup">
+    <a href="#" id="popup-closer" class="ol-popup-closer"></a>
+    <div id="popup-content"></div>
+</div>
+<script>
+
+
+    var view = new ol.View({
+        center: [13150973.28170159, 2805043.57996391],
+        zoom: 11,
+    });
+    function testAnimate() {
+        view.animate({
+            rotation: view.getRotation() + Math.PI / 2
+        });
+    }
+
+    var map = new ol.Map({
+        layers: [
+          new ol.layer.Tile({
+              extent: ol.proj.transformExtent([-2.0037508342787E7, -2.0037508342787E7, 2.0037508342787E7, 2.0037508342787E7], "EPSG:102100", "EPSG:3857"),
+              source: new ol.source.XYZ({
+                  urls: ['/map1/{z}/{x}/{y}.png']
+              })
+          }),
+          new ol.layer.Tile({
+              extent: ol.proj.transformExtent([-2.0037508342787E7, -2.0037508342787E7, 2.0037508342787E7, 2.0037508342787E7], "EPSG:102100", "EPSG:3857"),
+              source: new ol.source.XYZ({
+                  urls: ['/map2/{z}/{x}/{y}.png']
+              })
+          }),
+        ],
+        target: 'map',
+        loadTilesWhileAnimating: true,
+        controls: ol.control.defaults({
+            attributionOptions: /** type {olx.control.AttributionOptions} */ ({
+                collapsible: false,
+                className: ''
+            })
+        }),
+        view: view,
+    });
+    map.addEventListener("pointermove", function (e) {
+        var latlng = getLatLngFromPosition(e.coordinate);
+        document.getElementById('lblLatLng').innerText = '经度:' + latlng[0] + ' 纬度:' + latlng[1];
+    });
+    function getLatLngFromPosition(p) {
+        return ol.proj.toLonLat([p[0], p[1]]);
+    }
+
+    /*添加提示*/
+    var container = document.getElementById('popup');
+    var content = document.getElementById('popup-content');
+    var closer = document.getElementById('popup-closer');
+
+    var overlay = new ol.Overlay(({
+        element: container,
+        autoPan: false,
+        autoPanAnimation: {
+            duration: 250
+        }
+    }));
+    closer.onclick = function () {
+        overlay.setPosition(undefined);
+        closer.blur();
+        return false;
+    };
+    map.addOverlay(overlay);
+
+
+
+
+    //坐标类别转换
+    function changetype(point) {
+        return ol.proj.transform(point, 'EPSG:4326', 'EPSG:3857');
+    }
+
+    var imageStyle = new ol.style.Style({
+        image: new ol.style.Circle({
+            radius: 3,
+            snapToPixel: false,
+            fill: new ol.style.Fill({ color: 'yellow' }),
+            stroke: new ol.style.Stroke({ color: 'red', width: 1 })
+        }),
+        fill: new ol.style.Fill({
+            color: "yellow",
+            width: 100,
+        }),
+        stroke: new ol.style.Stroke({
+            color: "yellow"
+        })
+    });
+
+    
+
+
+    var Points = [];
+    var Names = [];
+    var sanjiaos = [];
+    var xians = [];
+    var multipolygon = new ol.geom.MultiPolygon();
+    var multipoint = new ol.geom.MultiPoint();
+
+    setPoints();
+    //设定初始数据
+    function setPoints() {
+        Points.push([118.17, 24.39]);
+        for (var i = 0; i < 10; i++) {
+            var y = 118 + Math.random() * 1;
+            var x = 24 + Math.random() * 1;
+
+            Points.push([y, x]);
+            Names.push([i,y,x]);
+            //Points.push([118.17, 24.39]);
+        }
+
+        for (var i = 0; i < Points.length; i++) {
+            var hx = Math.random() * 90;
+            sanjiaos.push([drawsanjiao(0, Points[i])]);
+            xians.push([drawzhongxian(hx, Points[i]), drawhangxiangdain(hx, Points[i], hx, Math.random() * 100)]);
+
+
+            if (i % 2 == 0) {
+                var pol = new ol.geom.Polygon(sanjiaos[i]);
+                pol.rotate((360 - hx) * Math.PI / 180, sanjiaos[i][0][0])
+                multipolygon.appendPolygon(pol);
+            } else {
+                var pol = new ol.geom.Circle(xians[i][0]);
+                multipoint.appendPoint(pol);
+            }
+        }
+    }
+    window.setInterval(function () {
+        Points = [];
+        sanjiaos = [];
+        xians = [];
+        multipolygon = new ol.geom.MultiPolygon();
+        multipoint = new ol.geom.MultiPoint();
+
+        setPoints();
+    }, 120000);
+
+    //数据移动方法
+    map.on('postcompose', function (event) {
+        var vectorContext = event.vectorContext;
+        var frameState = event.frameState;
+        vectorContext.setStyle(imageStyle);
+
+        vectorContext.drawGeometry(multipolygon);
+        vectorContext.drawGeometry(multipoint);
+        vectorContext.drawGeometry(new ol.geom.MultiLineString(xians));
+
+        //vectorContext.drawGeometry(new ol.geom.Point(changetype([118.913606284, 24.780681079])));
+        //vectorContext.drawGeometry(new ol.geom.MultiPoint(Points));
+
+        map.render();
+    });
+
+    map.render();
+
+
+    //实现点击事件。
+    map.on('click', function (e) {
+        var coordinates = e.coordinate;
+        var hdms = ol.coordinate.toStringHDMS(ol.proj.transform(
+       coordinates, 'EPSG:3857', 'EPSG:4326'));
+
+        var point = changeCoordinate(hdms);
+
+        //计算好后执行调用显示信息
+        showCoordinateInfo(point);
+
+    })
+
+    //实现判断点击的是哪个点。
+    function changeCoordinate(coordinate) {
+        var a = "24° 23′ 08″ N 118° 10′ 14″ E";
+
+        var spcoor = coordinate.split("N");
+        //经度
+        var longitude = spcoor[1].toString();
+        //纬度
+        var latitude = spcoor[0].toString();
+        latitude = latitude.substr(0, latitude.length - 1);
+        longitude = longitude.substr(1, longitude.length - 2);
+
+        /*处理经度*/
+        var long1 = parseFloat(longitude.substr(0, longitude.indexOf("°")));
+        var long2 = parseFloat(longitude.substr(longitude.indexOf("°") + 1, longitude.indexOf("′"))) / 60;
+        var long3 = parseFloat(longitude.substr(longitude.indexOf("′") + 1, longitude.indexOf("″"))) / 60 / 60;
+
+        //实际经度
+        var long = long1 + long2 + long3;
+
+        /*处理纬度*/
+        var lat1 = parseFloat(latitude.substr(0, latitude.indexOf("°")));
+        var lat2 = parseFloat(latitude.substr(latitude.indexOf("°") + 1, latitude.indexOf("′"))) / 60;
+        var lat3 = parseFloat(latitude.substr(latitude.indexOf("′") + 1, latitude.indexOf("″"))) / 60 / 60;
+
+        //实际纬度
+        var lat = lat1 + lat2 + lat3;
+
+        var miny = 999;
+        var minx = 99;
+
+        var tempx;
+        var tempy;
+
+        for (var i = 0; i < Points.length; i++) {
+            var item = Points[i];
+            var tempminy = Math.abs(item[0] - long);
+            var tempminx = Math.abs(item[1] - lat);
+
+            //小于时赋值
+            if (tempminy < miny) {
+                miny = tempminy;
+                tempy = i;
+            }
+            //小于时赋值
+            if (tempminx < minx) {
+                tempx = i;
+                minx = tempminx;
+            }
+
+            ////对比极小值和
+            //var minsum = minx + miny;
+            //var tempminsum = tempminx + tempminy;
+            //if (minsum >= tempminsum) {
+            //    tempmin = i;
+            //}
+        }
+
+        var realTemp;
+        if (tempx == tempy) {
+            realTemp = tempx;
+        } else {
+            if (minx > miny) {
+                realTemp = tempy;
+            }
+            else {
+                realTemp = tempx;
+            }
+        }
+
+        console.log([minx, miny, realTemp]);
+        //点击的点离数据组中的点太远，则返回空值
+        //同时负责精确点击点与数据点中的数据对比精度。
+        if (minx > 0.008 || miny > 0.008) {
+            return null;
+        }
+
+        return Points[realTemp];
+    }
+    //显示点击的点的信息
+    function showCoordinateInfo(point) {
+        if (point == null) {
+            return;
+        }
+        var coordinate = changetype([point[0], point[1]]);
+        map.getView().setCenter(coordinate);
+        content.innerHTML = '<p>船舶信息:</p><code>' +([point[0],point[1]]) +
+                   '</code>';
+
+        overlay.setPosition(coordinate)
+    }
+
+    //绘画三角形
+    function drawsanjiao(jiaodu, point) {
+        //等边边长（公里）
+        var r = 1;
+
+        var obj = 15;
+
+
+
+        //变形处理
+        if ((jiaodu > 345 || jiaodu < 15)) {
+            obj = 13;
+        }
+
+        //角度
+        var jd1 = jiaodu + 180 + obj;
+        var jd2 = jiaodu + 180 - obj;
+        var jdz = jiaodu + 180;
+
+        //象限
+        var xxyd = xiangxian(jiaodu);
+        var xx1 = xiangxian(jd1);
+        var xx2 = xiangxian(jd2);
+        var xxz = xiangxian(jdz);
+
+
+        //求得实际角度
+        //利用倍数来使其在同一个坐标轴进行计算
+
+        //以中线所在象限求得倍数。
+        var bs = xxz == 1 || xxz == 3 ? xxz - 1 : xxz;
+
+
+        var sjj1 = Math.abs(jd1 - bs * 90);
+        var sjj2 = Math.abs(jd2 - bs * 90);
+
+
+        //求得JS角度
+        //var jsja1 = Math.sin((sjj1 / 180) * Math.PI) + Math.sin((90 - sjj1) * Math.PI);
+        //var jsjb1 = Math.sin(((90 - sjj1) / 180) * Math.PI) + Math.sin(sjj1 * Math.PI);
+        //var jsja2 = Math.sin((sjj2 / 180) * Math.PI) + Math.sin((90 - sjj2) * Math.PI);
+        //var jsjb2 = Math.sin(((90 - sjj2) / 180) * Math.PI) + Math.sin(sjj2 * Math.PI);
+        var jsja1 = Math.sin((sjj1 / 180) * Math.PI);
+        var jsjb1 = Math.sin(((90 - sjj1) / 180) * Math.PI);
+        var jsja2 = Math.sin((sjj2 / 180) * Math.PI);
+        var jsjb2 = Math.sin(((90 - sjj2) / 180) * Math.PI);
+
+        //计算图上长度
+        //x为经度y为纬度
+        var p1x = Math.abs(r * Math.sin(jsja1));
+        var p1y = Math.abs(r * Math.sin(jsjb1));
+        var p2x = Math.abs(r * Math.sin(jsja2));
+        var p2y = Math.abs(r * Math.sin(jsjb2));
+
+        //坐标组
+        var points = [];
+
+        //将初始点存入组中
+        points.push(changetype(point));
+        //将初始点存入Session中
+        localStorage.setItem("point", point);
+        //两个坐标点
+        var p1 = makerpoint(xx1, p1x, p1y);
+        var p2 = makerpoint(xx2, p2x, p2y);
+
+        //坐标点存入组
+        points.push(changetype(p1));
+        points.push(changetype(p2));
+
+        points.push(points[0]);
+
+        //清除缓存数据
+        localStorage.removeItem("point");
+
+        return points;
+    }
+
+    //返回航向点
+    function drawhangxiangdain(hangxiang, point, chuanxiang, sog) {
+        //定义坐标组
+        var points = [];
+
+        //等边边长（公里）
+        var r = 1;
+        if (sog != undefined && sog != 0) {
+            r = sog == 0 ? r : r * sog;
+            r = r / 7;
+        }
+        //角度
+        var jdz = hangxiang;
+
+        //象限
+        var xxz = xiangxian(jdz);
+        var bs = xxz == 1 || xxz == 3 ? xxz - 1 : xxz;
+        var jj = Math.abs(hangxiang - chuanxiang);
+        if (jj >= 130 && jj < 345) {
+            r += r / 3;
+        }
+
+        //求得实际角度
+        var sjjz = Math.abs(jdz - bs * 90);
+
+        //求得JS角度
+        var jsjzx = Math.sin((sjjz / 180) * Math.PI);
+        var jsjzy = Math.sin(((90 - sjjz) / 180) * Math.PI);
+
+        //计算图上长度
+        //x为经度y为纬度
+        var px = Math.abs(r * Math.sin(jsjzx));
+        var py = Math.abs(r * Math.sin(jsjzy));
+
+        var zhongdian = makerpoint(xxz, px, py, point);
+        return changetype(zhongdian);
+    }
+
+    //返回中点
+    function drawzhongxian(jiaodu, point) {
+        //定义坐标组
+        var points = [];
+
+        //等边边长（公里）
+        var r = 1 / 2;
+        //r += r / 5;
+        //角度
+        var jdz = jiaodu + 180;
+
+        //象限
+        var xxz = xiangxian(jdz);
+        var bs = xxz == 1 || xxz == 3 ? xxz - 1 : xxz;
+
+        //求得实际角度
+        var sjjz = Math.abs(jdz - bs * 90);
+
+        //求得JS角度
+        var jsjzx = Math.sin((sjjz / 180) * Math.PI);
+        var jsjzy = Math.sin(((90 - sjjz) / 180) * Math.PI);
+
+        //计算图上长度
+        //x为经度y为纬度
+        var px = Math.abs(r * Math.sin(jsjzx));
+        var py = Math.abs(r * Math.sin(jsjzy));
+
+        var zhongdian = makerpoint(xxz, px, py, point);
+
+        return changetype(zhongdian);
+    }
+
+    //根据角大小求出该点位于哪个象限
+    function xiangxian(jiaodu) {
+        jiaodu = jiaodu > 360 ? jiaodu - 360 : jiaodu;
+
+        if (0 <= jiaodu && jiaodu <= 90)
+            return 1;
+        else if (90 < jiaodu && jiaodu <= 180)
+            return 2;
+        else if (180 < jiaodu && jiaodu <= 270)
+            return 3;
+        else if (270 < jiaodu && jiaodu <= 360)
+            return 4;
+        else
+            return 1;
+    }
+
+    //将实际坐标转换为地图坐标
+    function makerpoint(xiangxian, nx, ny, point) {
+
+        var temp2;
+        try {
+            var temp = localStorage.getItem("point");
+            var sp = temp.split(",");
+            temp2 = [parseFloat(sp[0]), parseFloat(sp[1])];
+        } catch (e) { }
+
+        if (point != null && point != undefined) {
+            //将初始点存入Session中,以防止数据改变。
+            localStorage.setItem("point", point);
+
+            var temp = localStorage.getItem("point");
+            var sp = temp.split(",");
+            temp2 = [parseFloat(sp[0]), parseFloat(sp[1])];
+        }
+
+        //数量级转换，先求纬度再求经度
+        var w = ny / 111;
+        var owd = temp2[1];
+        var nw = xiangxian == 1 || xiangxian == 4 ? owd + w : owd - w;
+        //已知纬度求经度，设定固定纬度使三角形腰更长
+        var j = Math.abs(nx / (111 * Math.cos(33.99)));
+        var ojd = temp2[0];
+        var nj = xiangxian == 1 || xiangxian == 2 ? ojd + j : ojd - j;
+
+        temp2[0] = nj;
+        temp2[1] = nw;
+        return temp2;
+    }
+</script>
