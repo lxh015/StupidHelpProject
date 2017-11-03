@@ -74,12 +74,21 @@ namespace Stupid
             request.Method = "GET";
             request.ContentType = "text/html";
             //添加cookie防止重定向时候出现异常
-           // request.AllowAutoRedirect = true;
+            // request.AllowAutoRedirect = true;
             //System.Net.CookieContainer cookieContext = new CookieContainer();
             //request.CookieContainer = cookieContext;
             //request.KeepAlive = true;
             //request.Host = "www.1399p.com";
             //加入浏览器标识防止获取数据为空。
+
+            request.Timeout = 30000;
+            request.ReadWriteTimeout = 30000;
+
+            System.Net.ServicePointManager.ServerCertificateValidationCallback += (se, cert, chain, sslerror) =>
+            {
+                return true;
+            };
+
             request.UserAgent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/56.0.2924.87 Safari/537.36";
             #region MyRegion
             //System.Net.WebRequest wReq = System.Net.WebRequest.Create(url);
@@ -103,11 +112,16 @@ namespace Stupid
             return retString;
         }
 
+
+        public static void g()
+        {
+         
+        }
         /// <summary>
         /// 获取POST信息
         /// </summary>
         /// <param name="url"></param>
-        /// <param name="parms"></param>
+        /// <param name="parms">类似username=lxh&amp;password=123456&amp;vcode=5-100&amp;vctime=0.06349646166503276&amp;kd=16&amp;cd=2</param>
         /// <returns></returns>
         public static string HttpPost(string url, string parms)
         {
@@ -115,6 +129,15 @@ namespace Stupid
             request.Method = "POST";
             request.ContentType = "application/x-www-form-urlencoded";
             request.ContentLength = parms.Length;
+
+            request.Timeout = 30000;
+            request.ReadWriteTimeout = 30000;
+
+            System.Net.ServicePointManager.ServerCertificateValidationCallback += (se, cert, chain, sslerror) =>
+            {
+                return true;
+            };
+
             StreamWriter writer = new StreamWriter(request.GetRequestStream(), Encoding.ASCII);
             writer.Write(parms);
             writer.Flush();
