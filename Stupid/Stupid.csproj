@@ -86,6 +86,7 @@
     <Compile Include="Common.cs" />
     <Compile Include="Extensions\AssemblyExtensions.cs" />
     <Compile Include="Extensions\ConvertEntensions.cs" />
+    <Compile Include="Extensions\CookieExpand.cs" />
     <Compile Include="Extensions\DynamicCreateClass.cs" />
     <Compile Include="Extensions\EncodingExtensions.cs" />
     <Compile Include="Extensions\EnumExtensions.cs" />
