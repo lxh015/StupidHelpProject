@@ -112,11 +112,6 @@ namespace Stupid
             return retString;
         }
 
-
-        public static void g()
-        {
-         
-        }
         /// <summary>
         /// 获取POST信息
         /// </summary>
