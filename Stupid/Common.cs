@@ -1003,6 +1003,26 @@ namespace Stupid
                 }
             }
 
+            /// <summary>
+            /// 判断乱码(Utf-8编码是否乱码)
+            /// </summary>
+            /// <param name="txt">字符串</param>
+            /// <returns>true:乱码</returns>
+            public static bool UTF8IsNoMath(string txt)
+            {
+                var bytes = Encoding.UTF8.GetBytes(txt);
+                //239 191 189
+                for (var i = 0; i < bytes.Length; i++)
+                {
+                    if (i < bytes.Length - 3)
+                        if (bytes[i] == 239 && bytes[i + 1] == 191 && bytes[i + 2] == 189)
+                        {
+                            return true;
+                        }
+                }
+                return false;
+            }
+
         }
 
         /// <summary>

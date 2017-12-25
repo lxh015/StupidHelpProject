@@ -146,5 +146,11 @@ namespace Stupid
             string retString = reader.ReadToEnd();
             return retString;
         }
+
+        //public static string ProxyGetResponse(string url, string method, WebProxy proxy)
+        //{
+        //    proxy.UseDefaultCredentials = true;
+
+        //}
     }
 }
