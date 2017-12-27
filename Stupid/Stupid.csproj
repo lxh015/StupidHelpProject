@@ -111,6 +111,7 @@
     <Compile Include="SomeConvert\ChineseToPinYin.cs" />
     <Compile Include="SomeConvert\DataToList.cs" />
     <Compile Include="SomeConvert\JsonConvert.cs" />
+    <Compile Include="SomeConvert\UnicodeConvert.cs" />
     <Compile Include="SomeConvert\XmlToEntity.cs" />
     <Compile Include="Specification\AndNotSepcification.cs" />
     <Compile Include="Specification\AndSepcification.cs" />
