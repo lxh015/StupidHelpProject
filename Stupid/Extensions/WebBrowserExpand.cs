@@ -261,9 +261,7 @@ namespace Stupid.Extensions
             return Task.Factory.StartNew(action, token, TaskCreationOptions.None, _taskScheduler).Unwrap();
         }
     }
-
-
-
+    
     /// <summary>
     /// 调用实例
     /// </summary>

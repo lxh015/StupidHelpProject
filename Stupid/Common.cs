@@ -73,6 +73,23 @@ namespace Stupid
         {
             #region 检查类代码
 
+            //public static bool CheckObject<T>(T obj) where T : class
+            //{
+            //    if (obj == null)
+            //        return true;
+
+            //    var properties = obj.GetType().GetProperties();
+            //    foreach (var item in properties)
+            //    {
+            //        var value = item.GetValue(obj);
+            //        if (value == null)
+            //            return true;
+            //        if (value.ToString() == "")
+            //            return true;
+            //    }
+            //    return false;
+            //}
+
             /// <summary>
             /// 密码强度检测
             /// </summary>
@@ -582,6 +599,96 @@ namespace Stupid
                     return Convert.ToBase64String(serializedPublicBytes);
                 }
                 #endregion
+
+                /// <summary>
+                /// 获取RSA密钥
+                /// </summary>
+                /// <returns></returns>
+                public static RSAKey GetKey()
+                {
+                    var key = new RSAKey();
+                    RSACryptoServiceProvider RSA = new RSACryptoServiceProvider();
+                    key.publicKey = Convert.ToBase64String(RSA.ExportCspBlob(false));
+                    key.privateKey = Convert.ToBase64String(RSA.ExportCspBlob(true));
+
+                    return key;
+                }
+
+                /// <summary>
+                /// RSA加密
+                /// </summary>
+                /// <param name="context">待加密字符串</param>
+                /// <param name="publicKey">公钥</param>
+                /// <returns></returns>
+                public static string RSAEncrypt(string context, string publicKey)
+                {
+                    UnicodeEncoding ByteConverter = new UnicodeEncoding();
+                    byte[] DataToEncrypt = ByteConverter.GetBytes(context);
+                    try
+                    {
+                        RSACryptoServiceProvider RSA = new RSACryptoServiceProvider();
+                        byte[] bytes_Public_Key = Convert.FromBase64String(publicKey);
+                        RSA.ImportCspBlob(bytes_Public_Key);
+
+
+                        //OAEP padding is only available on Microsoft Windows XP or later. 
+                        byte[] bytes_Cypher_Text = RSA.Encrypt(DataToEncrypt, false);
+                        //str_Public_Key = Convert.ToBase64String(RSA.ExportCspBlob(false));
+                        //str_Private_Key = Convert.ToBase64String(RSA.ExportCspBlob(true));
+                        string str_Cypher_Text = Convert.ToBase64String(bytes_Cypher_Text);
+                        return str_Cypher_Text;
+                    }
+                    catch (CryptographicException e)
+                    {
+                        Console.WriteLine(e.Message);
+                        return null;
+                    }
+                }
+
+                /// <summary>
+                /// RSA解密
+                /// </summary>
+                /// <param name="context">密文</param>
+                /// <param name="privateKey">私钥</param>
+                /// <returns></returns>
+                public static string RSADecrypt(string context, string privateKey)
+                {
+                    byte[] DataToDecrypt = Convert.FromBase64String(context);
+                    try
+                    {
+                        RSACryptoServiceProvider RSA = new RSACryptoServiceProvider();
+                        //RSA.ImportParameters(RSAKeyInfo);
+                        byte[] bytes_Public_Key = Convert.FromBase64String(privateKey);
+                        RSA.ImportCspBlob(bytes_Public_Key);
+
+                        //OAEP padding is only available on Microsoft Windows XP or later. 
+                        byte[] bytes_Plain_Text = RSA.Decrypt(DataToDecrypt, false);
+                        UnicodeEncoding ByteConverter = new UnicodeEncoding();
+                        string str_Plain_Text = ByteConverter.GetString(bytes_Plain_Text);
+                        return str_Plain_Text;
+                    }
+                    catch (CryptographicException e)
+                    {
+                        Console.WriteLine(e.ToString());
+                        return null;
+                    }
+                }
+
+                /// <summary>
+                /// 密钥保存类
+                /// </summary>
+                public struct RSAKey
+                {
+                    /// <summary>
+                    /// 私钥
+                    /// </summary>
+                    public string privateKey { get; set; }
+
+                    /// <summary>
+                    /// 公钥
+                    /// </summary>
+                    public string publicKey { get; set; }
+                }
             }
         }
 
