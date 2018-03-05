@@ -134,6 +134,7 @@
     <Compile Include="TxtLog\Logger.cs" />
     <Compile Include="WebApiSafe\WebApiAboutToken.cs" />
     <Compile Include="WebApiSafe\WebApiTokenAttribute.cs" />
+    <Compile Include="WininetHelper.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />
